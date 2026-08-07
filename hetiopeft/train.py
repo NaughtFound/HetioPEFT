@@ -3,9 +3,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import mlflow
-from torch_geometric.data import Data
+from torch_geometric.data import HeteroData
 
-from .trainers import Trainer
+from .models import Trainer
 from .utils import split_data
 
 
@@ -24,7 +24,7 @@ class TrainConf:
     split_target_edge: tuple[str, str, str] = ("Compound", "CrC", "Compound")
 
 
-def train(data: Data, trainer: Trainer, *, conf: TrainConf) -> None:
+def train(data: HeteroData, trainer: Trainer, *, conf: TrainConf) -> None:
     db_path = (Path(conf.prefix) / "mlflow.db").resolve()
     checkpoints_path = Path(conf.prefix) / conf.run_name / "checkpoints"
     mlflow.set_tracking_uri(f"sqlite:///{db_path}")

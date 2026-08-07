@@ -1,9 +1,9 @@
 import torch
 import torch_geometric.transforms as t
-from torch_geometric.data import Data
+from torch_geometric.data import HeteroData
 
 
-def split_data[D: Data](
+def split_data[D: HeteroData](
     data: D,
     target_edge: tuple[str, str, str],
     *,
