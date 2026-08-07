@@ -1,0 +1,5 @@
+hetionet:
+  module: hetiopeft.datasets
+  source: Hetionet
+  args:
+    root: datasets/hetionet
