@@ -1,0 +1,16 @@
+import:
+  c: common.yml
+  d: datasets.yml
+hetionet_ddi:
+  module: hetiopeft.models.ddi
+  source: HeteroDDIModel
+  call: from_data
+  args:
+    data:
+      module: hetiopeft.utils
+      source: extract_data_from_dataset
+      args:
+        - d.{hetionet}
+    hidden_dim: 768
+    target_node_type: Compound
+    use_peft: false

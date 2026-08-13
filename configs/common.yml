@@ -1,1 +1,3 @@
 prefix: .
+device: cuda
+target_edge: ["Compound", "CrC", "Compound"]

@@ -1,0 +1,23 @@
+import:
+  c: common.yml
+  m: models.yml
+hetionet_ddi:
+  module: hetiopeft.models.ddi
+  source: HeteroDDITrainer
+  args:
+    model: m.{hetionet_ddi}
+    optimizer:
+      module: hetiopeft.models.optim
+      source: adam
+      args:
+        model: m.{hetionet_ddi}
+        lr: 0.0005
+        betas:
+          - 0.9
+          - 0.999
+        weight_decay: 0.04
+    criterion:
+      module: torch.nn
+      source: BCEWithLogitsLoss
+    target_edge: c.{target_edge}
+    device: c.{device}
