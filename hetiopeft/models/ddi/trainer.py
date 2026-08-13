@@ -76,12 +76,14 @@ class HeteroDDITrainer(Trainer):
         """
         data = data.to(self.device)
 
-        h_dict = self.model.encode(data.x_dict, data.edge_index_dict)
-
         edge_label_index = data[self.target_edge].edge_label_index
         edge_label = data[self.target_edge].edge_label
 
-        logits = self.model.decode(h_dict[self.model.target_node_type], edge_label_index)
+        logits = self.model(
+            x_dict=data.x_dict,
+            edge_index_dict=data.edge_index_dict,
+            edge_label_index=edge_label_index,
+        )
         loss = self.criterion(logits, edge_label.float())
 
         if update:

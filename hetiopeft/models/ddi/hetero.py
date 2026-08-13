@@ -3,9 +3,10 @@ from typing import Any
 import torch
 import torch.nn.functional as f
 from torch import nn
+from torch_geometric.data import HeteroData
 from torch_geometric.nn import GATConv, HeteroConv, Linear
 
-from hetiopeft.utils import PersistMixin
+from hetiopeft.utils import PersistMixin, extract_graph_metadata
 
 
 class HeteroDDIModel(nn.Module, PersistMixin):
@@ -49,6 +50,27 @@ class HeteroDDIModel(nn.Module, PersistMixin):
             nn.ReLU(),
             nn.Dropout(0.2),
             Linear(64, 1),
+        )
+
+    @staticmethod
+    def from_data(
+        data: HeteroData,
+        *,
+        hidden_dim: int = 128,
+        target_node_type: str = "Compound",
+        peft_in_dim: int = 768,
+        use_peft: bool = True,
+    ) -> "HeteroDDIModel":
+        """Instantiate a HeteroDDIModel directly from a HeteroData graph instance."""
+        metadata, num_nodes_dict = extract_graph_metadata(data)
+
+        return HeteroDDIModel(
+            metadata=metadata,
+            num_nodes_dict=num_nodes_dict,
+            hidden_dim=hidden_dim,
+            target_node_type=target_node_type,
+            peft_in_dim=peft_in_dim,
+            use_peft=use_peft,
         )
 
     @property
