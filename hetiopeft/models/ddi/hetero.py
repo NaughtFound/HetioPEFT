@@ -5,8 +5,10 @@ import torch.nn.functional as f
 from torch import nn
 from torch_geometric.nn import GATConv, HeteroConv, Linear
 
+from hetiopeft.utils import PersistMixin
 
-class HeteroDDIModel(nn.Module):
+
+class HeteroDDIModel(nn.Module, PersistMixin):
     """Heterogeneous GNN link predictor for drug-drug interactions (DDI)."""
 
     def __init__(
@@ -22,9 +24,11 @@ class HeteroDDIModel(nn.Module):
         """Initialize the DDIModel architecture."""
         super().__init__()
         self.node_types, self.edge_types = metadata
-        self.use_peft = use_peft
+        self.num_nodes_dict = num_nodes_dict
         self.hidden_dim = hidden_dim
         self.target_node_type = target_node_type
+        self.peft_in_dim = peft_in_dim
+        self.use_peft = use_peft
 
         self.node_encoders = nn.ModuleDict()
         for node_type in self.node_types:
@@ -46,6 +50,17 @@ class HeteroDDIModel(nn.Module):
             nn.Dropout(0.2),
             Linear(64, 1),
         )
+
+    @property
+    def config(self) -> dict[str, Any]:
+        return {
+            "metadata": (self.node_types, self.edge_types),
+            "num_nodes_dict": self.num_nodes_dict,
+            "hidden_dim": self.hidden_dim,
+            "target_node_type": self.target_node_type,
+            "peft_in_dim": self.peft_in_dim,
+            "use_peft": self.use_peft,
+        }
 
     def encode(
         self,
