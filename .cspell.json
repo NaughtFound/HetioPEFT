@@ -12,6 +12,7 @@
         "cuda",
         "hetionet",
         "hetiopeft",
+        "iupac",
         "kaizo",
         "logits",
         "metaedge",
