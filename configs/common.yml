@@ -1,5 +1,5 @@
 seed: 0
-prefix: .
+prefix: runs
 device: cuda
 val_ratio: 0.15
 test_ratio: 0.7

@@ -1,11 +1,15 @@
+from typing import Any
+
 import torch
 import torch_geometric.transforms as t
 from torch_geometric.data import HeteroData
 
+from .graph import convert_to_edge_type
+
 
 def split_data[D: HeteroData](
     data: D,
-    target_edge: tuple[str, str, str],
+    target_edge: Any,
     *,
     seed: int = 0,
     val_ratio: float = 0.15,
@@ -18,7 +22,7 @@ def split_data[D: HeteroData](
         num_test=test_ratio,
         is_undirected=True,
         add_negative_train_samples=True,
-        edge_types=[target_edge],
+        edge_types=[convert_to_edge_type(target_edge)],
     )
 
     train_data, val_data, test_data = transform(data)

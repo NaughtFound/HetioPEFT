@@ -9,6 +9,7 @@ from torch import nn
 from torch_geometric.data import HeteroData
 
 from hetiopeft.models import Trainer
+from hetiopeft.utils import convert_to_edge_type
 
 from .hetero import HeteroDDIModel
 
@@ -21,7 +22,7 @@ class HeteroDDITrainer(Trainer):
         model: HeteroDDIModel,
         optimizer: torch.optim.Optimizer,
         criterion: nn.Module,
-        target_edge: tuple[str, str, str],
+        target_edge: Any,
         device: str | torch.device = "cpu",
     ) -> None:
         """Initialize the trainer instance with target configuration and hardware device.
@@ -37,7 +38,7 @@ class HeteroDDITrainer(Trainer):
         self.model = model.to(device)
         self.optimizer = optimizer
         self.criterion = criterion
-        self.target_edge = target_edge
+        self.target_edge = convert_to_edge_type(target_edge)
         self.device = torch.device(device)
 
     def log_params(self, **kwargs: Any) -> None:

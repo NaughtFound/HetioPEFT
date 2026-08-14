@@ -1,11 +1,15 @@
 from collections.abc import Callable
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pandas as pd
 import torch
 from torch_geometric.data import HeteroData, InMemoryDataset
 
 from hetiopeft.utils import download_file
+
+if TYPE_CHECKING:
+    from torch_geometric.typing import EdgeType
 
 
 class Hetionet(InMemoryDataset):
@@ -68,7 +72,7 @@ class Hetionet(InMemoryDataset):
             dst_indices = [node_id_maps[dst_kind][str(t)] for t in group["target"]]
 
             edge_index = torch.tensor([src_indices, dst_indices], dtype=torch.long)
-            edge_key: tuple[str, str, str] = (src_kind, metaedge, dst_kind)
+            edge_key: EdgeType = (src_kind, metaedge, dst_kind)
             data[edge_key].edge_index = edge_index
 
         if self.pre_transform is not None:

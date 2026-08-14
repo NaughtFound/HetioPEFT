@@ -4,6 +4,7 @@ from pathlib import Path
 
 import mlflow
 from torch_geometric.data import HeteroData
+from torch_geometric.typing import EdgeType
 
 from .models import Trainer
 from .utils import split_data
@@ -21,7 +22,7 @@ class TrainConf:
     experiment_name: str | None = None
     eval_every_n_epochs: int | None = None
     save_every_n_epochs: int | None = None
-    split_target_edge: tuple[str, str, str] = ("Compound", "CrC", "Compound")
+    split_target_edge: EdgeType = ("Compound", "CrC", "Compound")
 
 
 def train(data: HeteroData, trainer: Trainer, *, conf: TrainConf) -> None:

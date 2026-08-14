@@ -5,6 +5,7 @@ import torch.nn.functional as f
 from torch import nn
 from torch_geometric.data import HeteroData
 from torch_geometric.nn import GATConv, HeteroConv, Linear
+from torch_geometric.typing import EdgeType, NodeType
 
 from hetiopeft.utils import PersistMixin, extract_graph_metadata
 
@@ -15,10 +16,10 @@ class HeteroDDIModel(nn.Module, PersistMixin):
     def __init__(
         self,
         *,
-        metadata: tuple[list[str], list[tuple[str, str, str]]],
+        metadata: tuple[list[NodeType], list[EdgeType]],
         num_nodes_dict: dict[str, int],
         hidden_dim: int = 128,
-        target_node_type: str = "Compound",
+        target_node_type: NodeType = "Compound",
         peft_in_dim: int = 768,
         use_peft: bool = True,
     ) -> None:
@@ -39,7 +40,7 @@ class HeteroDDIModel(nn.Module, PersistMixin):
                 num_nodes = num_nodes_dict[node_type]
                 self.node_encoders[node_type] = nn.Embedding(num_nodes, hidden_dim)
 
-        conv_dict: dict[tuple[str, str, str], Any] = {}
+        conv_dict: dict[EdgeType, Any] = {}
         for edge_type in self.edge_types:
             conv_dict[edge_type] = GATConv(hidden_dim, hidden_dim, add_self_loops=False)
 
@@ -57,7 +58,7 @@ class HeteroDDIModel(nn.Module, PersistMixin):
         data: HeteroData,
         *,
         hidden_dim: int = 128,
-        target_node_type: str = "Compound",
+        target_node_type: NodeType = "Compound",
         peft_in_dim: int = 768,
         use_peft: bool = True,
     ) -> "HeteroDDIModel":
@@ -86,8 +87,8 @@ class HeteroDDIModel(nn.Module, PersistMixin):
 
     def encode(
         self,
-        x_dict: dict[str, torch.Tensor | None],
-        edge_index_dict: dict[tuple[str, str, str], torch.Tensor],
+        x_dict: dict[NodeType, torch.Tensor | None],
+        edge_index_dict: dict[EdgeType, torch.Tensor],
     ) -> dict[str, torch.Tensor]:
         """Encode graph nodes using feature projections and message passing."""
         h_dict: dict[str, torch.Tensor] = {}
@@ -105,8 +106,8 @@ class HeteroDDIModel(nn.Module, PersistMixin):
             else:
                 h_dict[node_type] = self.node_encoders[node_type].weight  # pyright: ignore[reportArgumentType]
 
-        h_dict = self.hetero_conv(h_dict, edge_index_dict)
-        return {k: f.relu(v) for k, v in h_dict.items()}
+        h_conv = self.hetero_conv(h_dict, edge_index_dict)
+        return {k: f.relu(v) for k, v in h_conv.items()}
 
     def decode(
         self,
@@ -120,8 +121,8 @@ class HeteroDDIModel(nn.Module, PersistMixin):
 
     def forward(
         self,
-        x_dict: dict[str, torch.Tensor | None],
-        edge_index_dict: dict[tuple[str, str, str], torch.Tensor],
+        x_dict: dict[NodeType, torch.Tensor | None],
+        edge_index_dict: dict[EdgeType, torch.Tensor],
         edge_label_index: torch.Tensor,
     ) -> torch.Tensor:
         """Perform forward pass to compute prediction logits for target edge pairs."""
