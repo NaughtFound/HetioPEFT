@@ -1,3 +1,9 @@
+seed: 0
 prefix: .
 device: cuda
+val_ratio: 0.15
+test_ratio: 0.7
+num_epochs: 300
+eval_every_n_epochs: 25
+save_every_n_epochs: 50
 target_edge: ["Compound", "CrC", "Compound"]

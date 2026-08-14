@@ -1,0 +1,28 @@
+import:
+  c: common.yml
+  d: datasets.yml
+  m: models.yml
+  t: trainers.yml
+hetionet_ddi:
+  module: hetiopeft.train
+  source: train
+  args:
+    data:
+      module: hetiopeft.utils
+      source: extract_data_from_dataset
+      args:
+        - d.{hetionet}
+    trainer: t.{hetionet_ddi}
+    conf:
+      module: hetiopeft.train
+      source: TrainConf
+      args:
+        seed: c.{seed}
+        val_ratio: c.{val_ratio}
+        test_ratio: c.{test_ratio}
+        num_epochs: c.{num_epochs}
+        prefix: c.{prefix}
+        run_name: hetionet ddi no peft
+        eval_every_n_epochs: c.{eval_every_n_epochs}
+        save_every_n_epochs: c.{save_every_n_epochs}
+        split_target_edge: c.{target_edge}
