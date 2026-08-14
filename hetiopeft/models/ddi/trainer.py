@@ -80,8 +80,13 @@ class HeteroDDITrainer(Trainer):
         edge_label_index = data[self.target_edge].edge_label_index
         edge_label = data[self.target_edge].edge_label
 
+        try:
+            x_dict = data.x_dict
+        except KeyError:
+            x_dict = {}
+
         logits = self.model(
-            x_dict=data.x_dict,
+            x_dict=x_dict,
             edge_index_dict=data.edge_index_dict,
             edge_label_index=edge_label_index,
         )

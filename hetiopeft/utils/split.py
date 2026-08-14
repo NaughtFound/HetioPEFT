@@ -20,7 +20,7 @@ def split_data[D: HeteroData](
     transform = t.RandomLinkSplit(
         num_val=val_ratio,
         num_test=test_ratio,
-        is_undirected=True,
+        is_undirected=False,
         add_negative_train_samples=True,
         edge_types=[convert_to_edge_type(target_edge)],
     )

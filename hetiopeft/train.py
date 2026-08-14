@@ -41,9 +41,9 @@ def train(data: HeteroData, trainer: Trainer, *, conf: TrainConf) -> None:
         test_ratio=conf.test_ratio,
     )
 
-    logging.info(f"train size: {len(train_data)}")
-    logging.info(f"validation size: {len(val_data)}")
-    logging.info(f"test size: {len(test_data)}")
+    logging.info(f"train size: {train_data.num_nodes}/{train_data.num_edges}")
+    logging.info(f"validation size: {val_data.num_nodes}/{val_data.num_edges}")
+    logging.info(f"test size: {test_data.num_nodes}/{test_data.num_edges}")
 
     with mlflow.start_run(run_name=conf.run_name, run_id=conf.run_id):
         global_steps = 0
@@ -55,10 +55,12 @@ def train(data: HeteroData, trainer: Trainer, *, conf: TrainConf) -> None:
                 prefix=f"(Epoch {epoch + 1}/{conf.num_epochs})",
             )
 
-            if (
-                val_data
-                and conf.eval_every_n_epochs is not None
-                and (epoch % conf.eval_every_n_epochs == 0 or epoch == conf.num_epochs)
+            if val_data and (
+                (epoch + 1) == conf.num_epochs
+                or (
+                    conf.eval_every_n_epochs is not None
+                    and (epoch + 1) % conf.eval_every_n_epochs == 0
+                )
             ):
                 trainer.evaluate(val_data, step=epoch)
 
