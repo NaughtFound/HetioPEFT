@@ -5,8 +5,9 @@ from typing import TYPE_CHECKING
 import pandas as pd
 import torch
 from torch_geometric.data import HeteroData, InMemoryDataset
+from tqdm import tqdm
 
-from hetiopeft.utils import download_file
+from hetiopeft.utils import download_file, get_compound_smiles_or_description
 
 if TYPE_CHECKING:
     from torch_geometric.typing import EdgeType
@@ -61,6 +62,23 @@ class Hetionet(InMemoryDataset):
             raw_ids = group["id"].tolist()
             node_id_maps[kind] = {str(raw_id): idx for idx, raw_id in enumerate(raw_ids)}
             data[kind].num_nodes = len(raw_ids)
+
+            if kind == "Compound":
+                drug_bank_ids = [rid.split("::")[-1] for rid in raw_ids]
+                compound_names = group["name"].tolist()
+
+                compound_descriptions = []
+                bar = tqdm(
+                    zip(drug_bank_ids, compound_names, strict=True),
+                    total=len(drug_bank_ids),
+                    desc="Fetching SMILES",
+                )
+                for db_id, name in bar:
+                    bar.set_description(f"Fetching SMILES for {name}")
+                    desc = get_compound_smiles_or_description(db_id)
+                    compound_descriptions.append(desc)
+
+                data["Compound"].smiles = compound_descriptions
 
         # 2. Add edges per metaedge relation
         for metaedge_raw, group in edges_df.groupby("metaedge"):
