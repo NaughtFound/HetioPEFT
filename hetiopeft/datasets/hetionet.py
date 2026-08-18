@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import logging
-from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -8,11 +9,14 @@ import torch
 from torch_geometric.data import HeteroData, InMemoryDataset
 from tqdm import tqdm
 
-from hetiopeft.models.peft import PEFTFeatureExtractor
 from hetiopeft.utils import download_file, get_compound_smiles_or_description
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from torch_geometric.typing import EdgeType
+
+    from hetiopeft.models.peft import PEFTFeatureExtractor
 
 
 class Hetionet(InMemoryDataset):

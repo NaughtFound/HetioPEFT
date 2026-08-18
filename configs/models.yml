@@ -1,3 +1,4 @@
+# cspell:words  Biomed  fulltext
 import:
   c: common.yml
   d: datasets.yml
@@ -14,3 +15,9 @@ hetionet_ddi:
     hidden_dim: 768
     target_node_type: Compound
     use_peft: false
+peft_pub_med_bert:
+  module: hetiopeft.models.peft
+  source: PEFTFeatureExtractor
+  args:
+    model_name: microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext
+    device: c.{device}
