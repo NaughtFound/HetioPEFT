@@ -12,3 +12,4 @@ with_embeddings: false
 batch_size: 32
 use_peft: false
 peft_in_dim: 768
+run_name: hetionet_without_peft

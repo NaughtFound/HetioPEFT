@@ -22,7 +22,7 @@ hetionet_ddi:
         test_ratio: c.{test_ratio}
         num_epochs: c.{num_epochs}
         prefix: c.{prefix}
-        run_name: hetionet ddi no peft
+        run_name: c.{run_name}
         eval_every_n_epochs: c.{eval_every_n_epochs}
         save_every_n_epochs: c.{save_every_n_epochs}
         split_target_edge: c.{target_edge}
