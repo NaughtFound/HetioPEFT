@@ -1,0 +1,17 @@
+import:
+  c: common.yml
+  d: datasets.yml
+  m: models.yml
+  p: processors.yml
+peft_extractor:
+  module: hetiopeft.process
+  source: process
+  args:
+    dataset: d.{hetionet}
+    processor: p.{peft}
+    conf:
+      module: hetiopeft.process
+      source: ProcessConf
+      args:
+        prefix: c.{prefix}
+        run_name: peft_extractor

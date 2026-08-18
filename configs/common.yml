@@ -9,3 +9,6 @@ save_every_n_epochs: 50
 target_edge: ["Compound", "CrC", "Compound"]
 fetch_smiles: true
 with_embeddings: false
+batch_size: 32
+use_peft: false
+peft_in_dim: 768

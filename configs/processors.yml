@@ -1,0 +1,9 @@
+import:
+  c: common.yml
+  m: models.yml
+peft:
+  module: hetiopeft.models.peft
+  source: PEFTProcessor
+  args:
+    extractor: m.{peft_pub_med_bert}
+    batch_size: c.{batch_size}

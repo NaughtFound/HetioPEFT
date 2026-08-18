@@ -14,7 +14,8 @@ hetionet_ddi:
         - d.{hetionet}
     hidden_dim: 768
     target_node_type: Compound
-    use_peft: false
+    use_peft: c.{use_peft}
+    peft_in_dim: c.{peft_in_dim}
 peft_pub_med_bert:
   module: hetiopeft.models.peft
   source: PEFTFeatureExtractor

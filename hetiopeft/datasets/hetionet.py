@@ -22,6 +22,11 @@ if TYPE_CHECKING:
 class Hetionet(InMemoryDataset):
     """Custom PyTorch Geometric Dataset for Hetionet v1.0."""
 
+    BASE_FILE = "hetionet_pyg.pt"
+    EMBEDDED_FILE = "hetionet_pyg_embedded.pt"
+    NODES_FILES = "nodes.tsv"
+    EDGES_FILES = "edges.sif.gz"
+
     def __init__(
         self,
         root: str | Path,
@@ -49,13 +54,13 @@ class Hetionet(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> list[str]:
-        return ["nodes.tsv", "edges.sif.gz"]
+        return [Hetionet.NODES_FILES, Hetionet.EDGES_FILES]
 
     @property
     def processed_file_names(self) -> list[str]:
         if self.with_embeddings:
-            return ["hetionet_pyg.pt", "hetionet_pyg_embedded.pt"]
-        return ["hetionet_pyg.pt"]
+            return [Hetionet.BASE_FILE, Hetionet.EMBEDDED_FILE]
+        return [Hetionet.BASE_FILE]
 
     def download(self) -> None:
         urls = {
@@ -72,7 +77,7 @@ class Hetionet(InMemoryDataset):
                 download_file(url, dest_path)
 
     def process(self) -> None:
-        if Path(self.processed_paths[0]).exists():
+        if Path(Hetionet.BASE_FILE).exists():
             return
 
         raw_dir = Path(self.raw_dir)
@@ -130,8 +135,8 @@ class Hetionet(InMemoryDataset):
         batch_size: int = 32,
     ) -> None:
         """Manually extract compound embeddings."""
-        base_path = Path(self.processed_paths[0])
-        embedded_path = Path(self.processed_paths[1])
+        base_path = Path(self.processed_dir) / Hetionet.BASE_FILE
+        embedded_path = Path(self.processed_dir) / Hetionet.EMBEDDED_FILE
 
         if not base_path.exists():
             msg = (
@@ -140,8 +145,8 @@ class Hetionet(InMemoryDataset):
             )
             raise RuntimeError(msg)
 
-        data_list, _ = torch.load(base_path)
-        data = data_list[0]
+        data_list = torch.load(base_path)
+        data = HeteroData.from_dict(data_list[0])
 
         if not hasattr(data["Compound"], "smiles"):
             msg = "data['Compound'].smiles is missing. Cannot generate embeddings."
