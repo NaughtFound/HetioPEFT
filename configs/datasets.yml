@@ -6,3 +6,4 @@ hetionet:
   args:
     root: datasets/hetionet
     fetch_smiles: c.{fetch_smiles}
+    with_embeddings: c.{with_embeddings}

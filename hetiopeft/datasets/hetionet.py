@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -7,6 +8,7 @@ import torch
 from torch_geometric.data import HeteroData, InMemoryDataset
 from tqdm import tqdm
 
+from hetiopeft.models.peft import PEFTFeatureExtractor
 from hetiopeft.utils import download_file, get_compound_smiles_or_description
 
 if TYPE_CHECKING:
@@ -23,11 +25,23 @@ class Hetionet(InMemoryDataset):
         pre_transform: Callable | None = None,
         *,
         fetch_smiles: bool = False,
+        with_embeddings: bool = False,
     ) -> None:
         self.root_path = Path(root)
+        self.with_embeddings = with_embeddings
         self.fetch_smiles = fetch_smiles
         super().__init__(str(self.root_path), transform, pre_transform)
-        self.load(self.processed_paths[0])
+        target_path = Path(self.processed_paths[1 if self.with_embeddings else 0])
+
+        if self.with_embeddings and not target_path.exists():
+            msg = (
+                f"Embeddings file not found at '{target_path}'. "
+                "Please generate and save the embedding file before setting "
+                "`with_embeddings=True`."
+            )
+            raise RuntimeError(msg)
+
+        self.load(str(target_path))
 
     @property
     def raw_file_names(self) -> list[str]:
@@ -35,6 +49,8 @@ class Hetionet(InMemoryDataset):
 
     @property
     def processed_file_names(self) -> list[str]:
+        if self.with_embeddings:
+            return ["hetionet_pyg.pt", "hetionet_pyg_embedded.pt"]
         return ["hetionet_pyg.pt"]
 
     def download(self) -> None:
@@ -52,6 +68,9 @@ class Hetionet(InMemoryDataset):
                 download_file(url, dest_path)
 
     def process(self) -> None:
+        if Path(self.processed_paths[0]).exists():
+            return
+
         raw_dir = Path(self.raw_dir)
         nodes_df = pd.read_csv(raw_dir / "nodes.tsv", sep="\t")
         edges_df = pd.read_csv(raw_dir / "edges.sif.gz", sep="\t", compression="gzip")
@@ -100,3 +119,35 @@ class Hetionet(InMemoryDataset):
             data = self.pre_transform(data)
 
         self.save([data], self.processed_paths[0])
+
+    def generate_embeddings(
+        self,
+        extractor: PEFTFeatureExtractor,
+        batch_size: int = 32,
+    ) -> None:
+        """Manually extract compound embeddings."""
+        base_path = Path(self.processed_paths[0])
+        embedded_path = Path(self.processed_paths[1])
+
+        if not base_path.exists():
+            msg = (
+                f"Base graph file '{base_path}' does not exist. "
+                "Run dataset processing first."
+            )
+            raise RuntimeError(msg)
+
+        data_list, _ = torch.load(base_path)
+        data = data_list[0]
+
+        if not hasattr(data["Compound"], "smiles"):
+            msg = "data['Compound'].smiles is missing. Cannot generate embeddings."
+            raise ValueError(msg)
+
+        logging.info("Generating PEFT embeddings for Compound nodes...")
+        data["Compound"].x = extractor.extract_embeddings(
+            data["Compound"].smiles,
+            batch_size=batch_size,
+        )
+
+        self.save([data], str(embedded_path))
+        logging.info(f"Saved embedded dataset to: {embedded_path}")

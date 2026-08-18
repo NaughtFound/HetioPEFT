@@ -3,6 +3,7 @@ from typing import Any
 import torch
 from peft import LoraConfig, TaskType, get_peft_model
 from torch import nn
+from tqdm import tqdm
 from transformers import AutoModel, AutoTokenizer
 
 from hetiopeft.utils import PersistMixin
@@ -94,7 +95,11 @@ class PEFTFeatureExtractor(nn.Module, PersistMixin):
         self.model.eval()
         all_embeddings: list[torch.Tensor] = []
 
-        for i in range(0, len(texts), batch_size):
+        for i in tqdm(
+            range(0, len(texts), batch_size),
+            desc="Extracting embeddings",
+            unit="batch",
+        ):
             batch_texts = texts[i : i + batch_size]
             embeddings = self.__call__(batch_texts)
             all_embeddings.append(embeddings.cpu())
