@@ -1,5 +1,8 @@
+import:
+  c: common.yml
 hetionet:
   module: hetiopeft.datasets
   source: Hetionet
   args:
     root: datasets/hetionet
+    fetch_smiles: c.{fetch_smiles}

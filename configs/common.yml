@@ -7,3 +7,4 @@ num_epochs: 300
 eval_every_n_epochs: 25
 save_every_n_epochs: 50
 target_edge: ["Compound", "CrC", "Compound"]
+fetch_smiles: true

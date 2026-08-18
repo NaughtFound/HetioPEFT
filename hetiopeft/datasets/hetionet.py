@@ -21,8 +21,11 @@ class Hetionet(InMemoryDataset):
         root: str | Path,
         transform: Callable | None = None,
         pre_transform: Callable | None = None,
+        *,
+        fetch_smiles: bool = False,
     ) -> None:
         self.root_path = Path(root)
+        self.fetch_smiles = fetch_smiles
         super().__init__(str(self.root_path), transform, pre_transform)
         self.load(self.processed_paths[0])
 
@@ -63,11 +66,11 @@ class Hetionet(InMemoryDataset):
             node_id_maps[kind] = {str(raw_id): idx for idx, raw_id in enumerate(raw_ids)}
             data[kind].num_nodes = len(raw_ids)
 
-            if kind == "Compound":
+            if self.fetch_smiles and kind == "Compound":
                 drug_bank_ids = [rid.split("::")[-1] for rid in raw_ids]
                 compound_names = group["name"].tolist()
 
-                compound_descriptions = []
+                compound_descriptions: list[str] = []
                 bar = tqdm(
                     zip(drug_bank_ids, compound_names, strict=True),
                     total=len(drug_bank_ids),
