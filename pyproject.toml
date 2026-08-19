@@ -10,6 +10,7 @@ dependencies = [
     "kaizo>=1.7.0",
     "mlflow>=3.15.1",
     "peft>=0.20.0",
+    "rdkit>=2026.3.5",
     "requests>=2.34.2",
     "torch>=2.13.0",
     "torch-geometric>=2.8.0.post1",

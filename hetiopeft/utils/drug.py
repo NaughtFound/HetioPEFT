@@ -1,6 +1,9 @@
 from http import HTTPStatus
 
 import requests
+import torch
+from rdkit import Chem
+from rdkit.Chem import rdFingerprintGenerator
 
 
 def get_compound_smiles(
@@ -36,3 +39,18 @@ def get_compound_smiles(
         pass
 
     return None
+
+
+def smiles_to_morgan_fingerprint(
+    smiles: str,
+    radius: int = 2,
+    n_bits: int = 1024,
+) -> torch.Tensor:
+    """Convert a SMILES string to a binary Morgan Fingerprint tensor."""
+    gen = rdFingerprintGenerator.GetMorganGenerator(radius=radius, fpSize=n_bits)
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        return torch.zeros(n_bits, dtype=torch.float32)
+
+    arr = gen.GetFingerprintAsNumPy(mol)
+    return torch.tensor(arr, dtype=torch.float32)
