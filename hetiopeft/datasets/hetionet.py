@@ -62,6 +62,14 @@ class Hetionet(InMemoryDataset):
             return [Hetionet.BASE_FILE, Hetionet.EMBEDDED_FILE]
         return [Hetionet.BASE_FILE]
 
+    @property
+    def base_path(self) -> Path:
+        return Path(self.processed_dir) / Hetionet.BASE_FILE
+
+    @property
+    def embedded_path(self) -> Path:
+        return Path(self.processed_dir) / Hetionet.EMBEDDED_FILE
+
     def download(self) -> None:
         urls = {
             "nodes.tsv": "https://raw.githubusercontent.com/hetio/hetionet/master/hetnet/tsv/hetionet-v1.0-nodes.tsv",
@@ -77,7 +85,7 @@ class Hetionet(InMemoryDataset):
                 download_file(url, dest_path)
 
     def process(self) -> None:
-        if Path(Hetionet.BASE_FILE).exists():
+        if self.base_path.exists():
             return
 
         raw_dir = Path(self.raw_dir)
@@ -135,17 +143,14 @@ class Hetionet(InMemoryDataset):
         batch_size: int = 32,
     ) -> None:
         """Manually extract compound embeddings."""
-        base_path = Path(self.processed_dir) / Hetionet.BASE_FILE
-        embedded_path = Path(self.processed_dir) / Hetionet.EMBEDDED_FILE
-
-        if not base_path.exists():
+        if not self.base_path.exists():
             msg = (
-                f"Base graph file '{base_path}' does not exist. "
+                f"Base graph file '{self.base_path}' does not exist. "
                 "Run dataset processing first."
             )
             raise RuntimeError(msg)
 
-        data_list = torch.load(base_path)
+        data_list = torch.load(self.base_path)
         data = HeteroData.from_dict(data_list[0])
 
         if not hasattr(data["Compound"], "smiles"):
@@ -158,5 +163,5 @@ class Hetionet(InMemoryDataset):
             batch_size=batch_size,
         )
 
-        self.save([data], str(embedded_path))
-        logging.info(f"Saved embedded dataset to: {embedded_path}")
+        self.save([data], str(self.embedded_path))
+        logging.info(f"Saved embedded dataset to: {self.embedded_path}")
