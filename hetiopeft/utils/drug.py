@@ -3,15 +3,19 @@ from http import HTTPStatus
 import requests
 
 
-def get_compound_smiles_or_description(drug_bank_id: str, timeout: float = 10.0) -> str:
-    """Fetch CID or description from PubChem using DrugBank ID.
+def get_compound_smiles(
+    drug_bank_id: str,
+    timeout: float = 10.0,
+) -> dict[str, str] | None:
+    """Fetch compound title, IUPAC name, and SMILES from PubChem using a DrugBank ID.
 
     Args:
-        drug_bank_id: The DrugBank ID (e.g., 'DB00843').
+        drug_bank_id: The DrugBank identifier (e.g., 'DB00843').
         timeout: Request timeout in seconds. Defaults to 10.0.
 
     Returns:
-        Formatted summary string with chemical properties or fallback label.
+        A dictionary containing 'title', 'iupac', and 'smiles' keys if found,
+        or None if the API request fails or the compound is not found.
 
     """
     url = (
@@ -26,8 +30,9 @@ def get_compound_smiles_or_description(drug_bank_id: str, timeout: float = 10.0)
             title = props.get("Title", "Unknown")
             iupac = props.get("IUPACName", "N/A")
             smiles = props.get("SMILES", "N/A")
-            return f"Compound {title}. IUPAC: {iupac}. SMILES: {smiles}"
+
+            return {"title": title, "iupac": iupac, "smiles": smiles}
     except (requests.RequestException, KeyError, IndexError):
         pass
 
-    return f"Compound with DrugBank ID {drug_bank_id}"
+    return None

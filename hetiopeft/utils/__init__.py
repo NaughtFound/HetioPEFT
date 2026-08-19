@@ -1,4 +1,4 @@
-from .drug import get_compound_smiles_or_description
+from .drug import get_compound_smiles
 from .graph import convert_to_edge_type, extract_data_from_dataset, extract_graph_metadata
 from .io import download_file
 from .persist import PersistMixin
@@ -10,6 +10,6 @@ __all__ = (
     "download_file",
     "extract_data_from_dataset",
     "extract_graph_metadata",
-    "get_compound_smiles_or_description",
+    "get_compound_smiles",
     "split_data",
 )

@@ -9,7 +9,7 @@ import torch
 from torch_geometric.data import HeteroData, InMemoryDataset
 from tqdm import tqdm
 
-from hetiopeft.utils import download_file, get_compound_smiles_or_description
+from hetiopeft.utils import download_file, get_compound_smiles
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -106,7 +106,9 @@ class Hetionet(InMemoryDataset):
                 drug_bank_ids = [rid.split("::")[-1] for rid in raw_ids]
                 compound_names = group["name"].tolist()
 
-                compound_descriptions: list[str] = []
+                compound_smiles: list[str] = []
+                compound_iupac: list[str] = []
+
                 bar = tqdm(
                     zip(drug_bank_ids, compound_names, strict=True),
                     total=len(drug_bank_ids),
@@ -114,10 +116,17 @@ class Hetionet(InMemoryDataset):
                 )
                 for db_id, name in bar:
                     bar.set_description(f"Fetching SMILES for {name}")
-                    desc = get_compound_smiles_or_description(db_id)
-                    compound_descriptions.append(desc)
+                    res = get_compound_smiles(db_id) or {}
 
-                data["Compound"].smiles = compound_descriptions
+                    iupac = res.get("iupac", "N/A")
+                    smiles = res.get("smiles", "N/A")
+
+                    compound_smiles.append(smiles)
+                    compound_iupac.append(iupac)
+
+                data["Compound"].names = compound_names
+                data["Compound"].smiles = compound_smiles
+                data["Compound"].iupac = compound_iupac
 
         # 2. Add edges per metaedge relation
         for metaedge_raw, group in edges_df.groupby("metaedge"):
@@ -153,13 +162,30 @@ class Hetionet(InMemoryDataset):
         data_list = torch.load(self.base_path)
         data = HeteroData.from_dict(data_list[0])
 
-        if not hasattr(data["Compound"], "smiles"):
-            msg = "data['Compound'].smiles is missing. Cannot generate embeddings."
+        missing_attrs = [
+            attr
+            for attr in ["smiles", "iupac", "name"]
+            if not hasattr(data["Compound"], attr)
+        ]
+        if missing_attrs:
+            msg = (
+                f"Missing attributes in data['Compound']: {missing_attrs}. "
+                "Cannot generate formatted compound descriptions."
+            )
             raise ValueError(msg)
 
         logging.info("Generating PEFT embeddings for Compound nodes...")
+        compound_texts = [
+            f"Compound {name}. IUPAC: {iupac}. SMILES: {smiles}"
+            for name, iupac, smiles in zip(
+                data["Compound"].name,
+                data["Compound"].iupac,
+                data["Compound"].smiles,
+                strict=True,
+            )
+        ]
         data["Compound"].x = extractor.extract_embeddings(
-            data["Compound"].smiles,
+            compound_texts,
             batch_size=batch_size,
         )
 
