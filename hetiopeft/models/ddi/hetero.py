@@ -19,6 +19,7 @@ class HeteroDDIModel(nn.Module, PersistMixin):
         metadata: tuple[list[NodeType], list[EdgeType]],
         num_nodes_dict: dict[str, int],
         hidden_dim: int = 128,
+        dropout: float = 0.3,
         target_node_type: NodeType = "Compound",
         peft_in_dim: int = 768,
         use_peft: bool = True,
@@ -28,17 +29,26 @@ class HeteroDDIModel(nn.Module, PersistMixin):
         self.node_types, self.edge_types = metadata
         self.num_nodes_dict = num_nodes_dict
         self.hidden_dim = hidden_dim
+        self.dropout = dropout
         self.target_node_type = target_node_type
         self.peft_in_dim = peft_in_dim
         self.use_peft = use_peft
 
         self.node_encoders = nn.ModuleDict()
+        self.node_norms = nn.ModuleDict()
+        self.post_conv_norms = nn.ModuleDict()
+
         for node_type in self.node_types:
             if node_type == self.target_node_type and self.use_peft:
                 self.node_encoders[node_type] = Linear(peft_in_dim, hidden_dim)
             else:
                 num_nodes = num_nodes_dict[node_type]
-                self.node_encoders[node_type] = nn.Embedding(num_nodes, hidden_dim)
+                emb = nn.Embedding(num_nodes, hidden_dim)
+                nn.init.xavier_uniform_(emb.weight)
+                self.node_encoders[node_type] = emb
+
+            self.node_norms[node_type] = nn.LayerNorm(hidden_dim)
+            self.post_conv_norms[node_type] = nn.LayerNorm(hidden_dim)
 
         conv_dict: dict[EdgeType, Any] = {}
         for edge_type in self.edge_types:
@@ -49,15 +59,18 @@ class HeteroDDIModel(nn.Module, PersistMixin):
         self.link_predictor = nn.Sequential(
             Linear(hidden_dim * 2, 64),
             nn.ReLU(),
-            nn.Dropout(0.2),
+            nn.Dropout(dropout),
             Linear(64, 1),
         )
+
+        self.dropout_layer = nn.Dropout(dropout)
 
     @staticmethod
     def from_data(
         data: HeteroData,
         *,
         hidden_dim: int = 128,
+        dropout: float = 0.3,
         target_node_type: NodeType = "Compound",
         peft_in_dim: int = 768,
         use_peft: bool = True,
@@ -69,6 +82,7 @@ class HeteroDDIModel(nn.Module, PersistMixin):
             metadata=metadata,
             num_nodes_dict=num_nodes_dict,
             hidden_dim=hidden_dim,
+            dropout=dropout,
             target_node_type=target_node_type,
             peft_in_dim=peft_in_dim,
             use_peft=use_peft,
@@ -80,6 +94,7 @@ class HeteroDDIModel(nn.Module, PersistMixin):
             "metadata": (self.node_types, self.edge_types),
             "num_nodes_dict": self.num_nodes_dict,
             "hidden_dim": self.hidden_dim,
+            "dropout": self.dropout,
             "target_node_type": self.target_node_type,
             "peft_in_dim": self.peft_in_dim,
             "use_peft": self.use_peft,
@@ -102,12 +117,19 @@ class HeteroDDIModel(nn.Module, PersistMixin):
                         "when use_peft=True."
                     )
                     raise ValueError(msg)
-                h_dict[node_type] = self.node_encoders[node_type](target_x)
+                h = self.node_encoders[node_type](target_x)
             else:
-                h_dict[node_type] = self.node_encoders[node_type].weight  # pyright: ignore[reportArgumentType]
+                h = self.node_encoders[node_type].weight
+
+            h = self.node_norms[node_type](h)
+            h_dict[node_type] = self.dropout_layer(h)
 
         h_conv = self.hetero_conv(h_dict, edge_index_dict)
-        return {k: f.relu(v) for k, v in h_conv.items()}
+        out_dict: dict[str, torch.Tensor] = {}
+        for k, v in h_conv.items():
+            h_res = h_dict[k] + v
+            out_dict[k] = f.relu(self.post_conv_norms[k](h_res))
+        return out_dict
 
     def decode(
         self,
@@ -116,7 +138,11 @@ class HeteroDDIModel(nn.Module, PersistMixin):
     ) -> torch.Tensor:
         """Predict interaction logits for target node pairs."""
         src, dst = edge_label_index[0], edge_label_index[1]
-        pair_features = torch.cat([h_target[src], h_target[dst]], dim=-1)
+        h_src, h_dst = h_target[src], h_target[dst]
+        prod = h_src * h_dst
+        diff = torch.abs(h_src - h_dst)
+        pair_features = torch.cat([prod, diff], dim=-1)
+
         return self.link_predictor(pair_features).squeeze(-1)
 
     def forward(

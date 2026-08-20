@@ -13,6 +13,7 @@ hetionet_ddi:
       args:
         - d.{hetionet}
     hidden_dim: 768
+    dropout: c.{dropout}
     target_node_type: Compound
     use_peft: c.{use_peft}
     peft_in_dim: c.{peft_in_dim}
