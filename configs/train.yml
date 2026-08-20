@@ -18,6 +18,7 @@ hetionet_ddi:
       source: TrainConf
       args:
         seed: c.{seed}
+        disjoint_train_ratio: c.{disjoint_train_ratio}
         val_ratio: c.{val_ratio}
         test_ratio: c.{test_ratio}
         num_epochs: c.{num_epochs}

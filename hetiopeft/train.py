@@ -14,7 +14,8 @@ from .utils import split_data
 class TrainConf:
     seed: int = 0
     val_ratio: float = 0.15
-    test_ratio: float = 0.7
+    test_ratio: float = 0.15
+    disjoint_train_ratio: float = 0.2
     num_epochs: int = 100
     prefix: str = "."
     run_id: str | None = None
@@ -37,6 +38,7 @@ def train(data: HeteroData, trainer: Trainer, *, conf: TrainConf) -> None:
         data=data,
         target_edge=conf.split_target_edge,
         seed=conf.seed,
+        disjoint_train_ratio=conf.disjoint_train_ratio,
         val_ratio=conf.val_ratio,
         test_ratio=conf.test_ratio,
     )
