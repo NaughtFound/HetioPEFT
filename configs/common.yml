@@ -17,3 +17,5 @@ use_peft: false
 hidden_dim: 768
 peft_in_dim: 768
 run_name: hetionet_without_peft
+lr: 0.0005
+weight_decay: 0.0001
