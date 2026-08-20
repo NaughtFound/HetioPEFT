@@ -7,7 +7,7 @@ from torch_geometric.data import HeteroData
 from torch_geometric.typing import EdgeType
 
 from .models import Trainer
-from .utils import split_data
+from .utils import resample_train_negatives, split_data
 
 
 @dataclass
@@ -55,6 +55,11 @@ def train(data: HeteroData, trainer: Trainer, *, conf: TrainConf) -> None:
                 train_data,
                 step=global_steps,
                 prefix=f"(Epoch {epoch + 1}/{conf.num_epochs})",
+            )
+
+            train_data = resample_train_negatives(
+                train_data=train_data,
+                target_edge=conf.split_target_edge,
             )
 
             if val_data and (

@@ -12,9 +12,9 @@ hetionet_ddi:
       source: extract_data_from_dataset
       args:
         - d.{hetionet}
-    hidden_dim: 768
+    hidden_dim: c.{hidden_dim}
     dropout: c.{dropout}
-    target_node_type: Compound
+    target_node_type: c.{target_node_type}
     use_peft: c.{use_peft}
     peft_in_dim: c.{peft_in_dim}
 peft_pub_med_bert:
