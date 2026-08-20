@@ -124,7 +124,7 @@ class Hetionet(InMemoryDataset):
                     compound_smiles.append(smiles)
                     compound_iupac.append(iupac)
 
-                data["Compound"].names = compound_names
+                data["Compound"].name = compound_names
                 data["Compound"].smiles = compound_smiles
                 data["Compound"].iupac = compound_iupac
 
