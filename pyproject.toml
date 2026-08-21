@@ -7,7 +7,7 @@ requires-python = ">=3.13"
 dependencies = [
     "accelerate>=1.14.0",
     "bitsandbytes>=0.50.0",
-    "kaizo>=1.7.0",
+    "kaizo>=1.7.1",
     "mlflow>=3.15.1",
     "peft>=0.20.0",
     "rdkit>=2026.3.5",
